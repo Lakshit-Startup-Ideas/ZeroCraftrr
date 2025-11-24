@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zerocraftr-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: zerocraftr-backend
+  template:
+    metadata:
+      labels:
+        app: zerocraftr-backend
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/zerocraftr/backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - secretRef:
+                name: zerocraftr-secrets
+          env:
+            - name: DATABASE_URL
+              value: postgresql://postgres:postgres@postgres:5432/zerocraftr
+            - name: REDIS_URL
+              value: redis://redis:6379/0
+            - name: MQTT_BROKER_URL
+              value: mqtt://mqtt:1883
+            - name: AI_ENGINE_URL
+              value: http://ai-engine:9000
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  selector:
+    app: zerocraftr-backend
+  ports:
+    - port: 8000
+      targetPort: 8000

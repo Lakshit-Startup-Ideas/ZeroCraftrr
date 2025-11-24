@@ -1,0 +1,175 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: zerocraftr
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+
+  mqtt:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"
+    volumes:
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_config:/mosquitto/config
+
+  backend:
+    build:
+      context: ./backend
+    env_file:
+      - ./.env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/zerocraftr
+      REDIS_URL: redis://redis:6379/0
+      MQTT_BROKER_URL: mqtt://mqtt:1883
+      AI_FORECAST_URL: http://ai-forecast:9001
+      AI_OPTIMIZE_URL: http://ai-optimize:9002
+      AI_INSIGHTS_URL: http://ai-insights:9003
+      AI_RETRAIN_URL: http://ai-retrain:9004
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      mqtt:
+        condition: service_started
+    ports:
+      - "8000:8000"
+
+  ai-forecast:
+    build:
+      context: ./ai-engine
+      dockerfile: Dockerfile.forecast
+    env_file:
+      - ./.env
+    environment:
+      AI_JWT_SECRET: ${AI_JWT_SECRET}
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "9101:9001"
+
+  ai-optimize:
+    build:
+      context: ./ai-engine
+      dockerfile: Dockerfile.optimize
+    env_file:
+      - ./.env
+    environment:
+      AI_JWT_SECRET: ${AI_JWT_SECRET}
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "9102:9002"
+
+  ai-insights:
+    build:
+      context: ./ai-engine
+      dockerfile: Dockerfile.insights
+    env_file:
+      - ./.env
+    environment:
+      AI_JWT_SECRET: ${AI_JWT_SECRET}
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "9103:9003"
+
+  ai-retrain:
+    build:
+      context: ./ai-engine
+      dockerfile: Dockerfile.retrain
+    env_file:
+      - ./.env
+    environment:
+      AI_JWT_SECRET: ${AI_JWT_SECRET}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio123
+      MODEL_REGISTRY_PATH: /models/models_registry.db
+    volumes:
+      - models_registry:/models
+    depends_on:
+      minio:
+        condition: service_started
+    ports:
+      - "9104:9004"
+
+  minio:
+    image: minio/minio:RELEASE.2024-07-26T20-48-21Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9200:9000"
+      - "9201:9001"
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      VITE_API_URL: http://backend:8000/api/v1
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "5173:5173"
+
+  iot-edge:
+    build:
+      context: ./iot-edge
+    environment:
+      BACKEND_URL: http://backend:8000/api/v1
+    depends_on:
+      mqtt:
+        condition: service_started
+      backend:
+        condition: service_started
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - ./deployment/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      prometheus:
+        condition: service_started
+
+volumes:
+  postgres_data:
+  redis_data:
+  mosquitto_data:
+  mosquitto_config:
+  minio_data:
+  models_registry:

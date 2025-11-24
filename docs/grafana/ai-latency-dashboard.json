@@ -1,0 +1,48 @@
+{
+  "title": "ZeroCraftr AI Observability",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Forecast Latency (p95)",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(forecast_latency_seconds_bucket[5m])) by (le))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Optimizer Suggestions / min",
+      "targets": [
+        {
+          "expr": "sum(rate(optimizer_suggestions_total[1m]))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Insight Generation Time (avg)",
+      "targets": [
+        {
+          "expr": "rate(insight_generation_time_sum[5m]) / rate(insight_generation_time_count[5m])",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  }
+}

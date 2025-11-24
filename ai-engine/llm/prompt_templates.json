@@ -1,0 +1,8 @@
+{
+  "templates": [
+    {
+      "id": "baseline",
+      "template": "Considering energy performance ({energy_summary}), predictive outlook ({forecast_summary}), and optimization levers ({optimization_summary}), craft one concise action manufacturers can take in the next week."
+    }
+  ]
+}

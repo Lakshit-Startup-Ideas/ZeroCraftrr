@@ -1,0 +1,69 @@
+{{- $root := . -}}
+{{- range $name, $svc := .Values.services }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "zerocraftr-ai.fullname" $root }}-{{ $name }}
+  labels:
+    {{ include "zerocraftr-ai.labels" $root | nindent 4 }}
+    zerocraftr.ai/component: {{ $name }}
+spec:
+  replicas: {{ $svc.replicas | default 1 }}
+  selector:
+    matchLabels:
+      zerocraftr.ai/component: {{ $name }}
+      app.kubernetes.io/instance: {{ $root.Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{ include "zerocraftr-ai.labels" $root | nindent 8 }}
+        zerocraftr.ai/component: {{ $name }}
+    spec:
+      {{- if $root.Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml $root.Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ $name }}
+          image: "{{ $svc.image }}:{{ $svc.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ $svc.port }}
+              name: http
+          env:
+            {{- range $key, $value := $svc.env }}
+            - name: {{ $key }}
+              value: "{{ $value }}"
+            {{- end }}
+          {{- if $root.Values.resources }}
+          resources:
+{{ toYaml $root.Values.resources | indent 12 }}
+          {{- end }}
+          {{- if and $svc.persistence $svc.persistence.enabled }}
+          volumeMounts:
+            - mountPath: /models
+              name: registry
+          {{- end }}
+      {{- if and $svc.persistence $svc.persistence.enabled }}
+      volumes:
+        - name: registry
+          persistentVolumeClaim:
+            claimName: {{ include "zerocraftr-ai.fullname" $root }}-registry
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "zerocraftr-ai.fullname" $root }}-{{ $name }}
+  labels:
+    {{ include "zerocraftr-ai.labels" $root | nindent 4 }}
+spec:
+  selector:
+    zerocraftr.ai/component: {{ $name }}
+    app.kubernetes.io/instance: {{ $root.Release.Name }}
+  ports:
+    - name: http
+      port: {{ $svc.port }}
+      targetPort: http
+{{- end }}

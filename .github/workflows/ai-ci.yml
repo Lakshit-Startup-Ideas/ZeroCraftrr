@@ -1,0 +1,23 @@
+name: AI Build & Test
+
+on: [push, pull_request]
+
+jobs:
+  ai-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install AI dependencies
+        run: pip install --no-cache-dir -r ai-engine/requirements.txt
+
+      - name: Run AI unit tests
+        run: pytest ai-engine/tests -v
+
+      - name: Build AI engine image
+        run: docker build -t zerocraftr/ai-engine:latest ai-engine/

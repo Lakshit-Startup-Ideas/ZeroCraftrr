@@ -1,0 +1,48 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "zerocraftr-ai.fullname" . }}
+  labels:
+    {{ include "zerocraftr-ai.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - path: /forecast
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "zerocraftr-ai.fullname" . }}-forecast
+                port:
+                  number: {{ (index .Values.services "forecast").port }}
+          - path: /optimize
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "zerocraftr-ai.fullname" . }}-optimize
+                port:
+                  number: {{ (index .Values.services "optimize").port }}
+          - path: /insights
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "zerocraftr-ai.fullname" . }}-insights
+                port:
+                  number: {{ (index .Values.services "insights").port }}
+          - path: /models
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "zerocraftr-ai.fullname" . }}-retrain
+                port:
+                  number: {{ (index .Values.services "retrain").port }}
+  {{- if .Values.ingress.tls }}
+  tls:
+{{ toYaml .Values.ingress.tls | indent 4 }}
+  {{- end }}
+{{- end }}

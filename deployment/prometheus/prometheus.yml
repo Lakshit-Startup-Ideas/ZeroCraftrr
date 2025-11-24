@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'backend'
+    static_configs:
+      - targets: ['backend:8000']
+  - job_name: 'ai-forecast'
+    static_configs:
+      - targets: ['ai-forecast:9001']
+  - job_name: 'ai-optimize'
+    static_configs:
+      - targets: ['ai-optimize:9002']
+  - job_name: 'ai-insights'
+    static_configs:
+      - targets: ['ai-insights:9003']
+  - job_name: 'ai-retrain'
+    static_configs:
+      - targets: ['ai-retrain:9004']

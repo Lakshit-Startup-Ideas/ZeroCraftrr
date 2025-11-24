@@ -1,0 +1,42 @@
+{{- if .Values.retrainCron.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "zerocraftr-ai.fullname" . }}-retrain
+  labels:
+    {{ include "zerocraftr-ai.labels" . | nindent 4 }}
+spec:
+  schedule: "{{ .Values.retrainCron.schedule }}"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{ include "zerocraftr-ai.labels" . | nindent 12 }}
+            zerocraftr.ai/component: retrain-cron
+        spec:
+          containers:
+            - name: retrain-cron
+              image: "{{ .Values.retrainCron.image }}:{{ .Values.retrainCron.tag }}"
+              imagePullPolicy: IfNotPresent
+              command: ["python", "-m", "services.retrain_worker"]
+              env:
+                {{- range $key, $value := .Values.retrainCron.env }}
+                - name: {{ $key }}
+                  value: "{{ $value }}"
+                {{- end }}
+              {{- $retrain := index .Values.services "retrain" }}
+              {{- if and $retrain.persistence $retrain.persistence.enabled }}
+              volumeMounts:
+                - mountPath: /models
+                  name: registry
+              {{- end }}
+          restartPolicy: OnFailure
+          {{- $retrainSvc := index .Values.services "retrain" }}
+          {{- if and $retrainSvc.persistence $retrainSvc.persistence.enabled }}
+          volumes:
+            - name: registry
+              persistentVolumeClaim:
+                claimName: {{ include "zerocraftr-ai.fullname" . }}-registry
+          {{- end }}
+{{- end }}

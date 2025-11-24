@@ -1,0 +1,60 @@
+imagePullSecrets: []
+
+services:
+  forecast:
+    image: zerocraftr/ai-forecast
+    tag: latest
+    port: 9001
+    replicas: 1
+    env:
+      AI_JWT_SECRET: supersecret
+  optimize:
+    image: zerocraftr/ai-optimize
+    tag: latest
+    port: 9002
+    replicas: 1
+    env:
+      AI_JWT_SECRET: supersecret
+  insights:
+    image: zerocraftr/ai-insights
+    tag: latest
+    port: 9003
+    replicas: 1
+    env:
+      AI_JWT_SECRET: supersecret
+  retrain:
+    image: zerocraftr/ai-retrain
+    tag: latest
+    port: 9004
+    replicas: 1
+    env:
+      AI_JWT_SECRET: supersecret
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio123
+      MODEL_REGISTRY_PATH: /models/models_registry.db
+    persistence:
+      enabled: true
+      size: 1Gi
+      storageClassName: ""
+
+resources: {}
+
+ingress:
+  enabled: true
+  className: ""
+  host: ai.local
+  tls: []
+
+retrainCron:
+  enabled: true
+  schedule: "0 2 * * *"
+  image: zerocraftr/ai-retrain
+  tag: latest
+  env:
+    SITE_ID: "1"
+    AI_JWT_SECRET: supersecret
+    MINIO_ENDPOINT: http://minio:9000
+    MINIO_ACCESS_KEY: minio
+    MINIO_SECRET_KEY: minio123
+    MODEL_REGISTRY_PATH: /models/models_registry.db

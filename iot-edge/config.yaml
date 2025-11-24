@@ -1,0 +1,9 @@
+device:
+  identifier: demo-device-001
+  factory_id: 1
+backend:
+  url: http://localhost:8000/api/v1
+mqtt:
+  host: mqtt
+  port: 1883
+poll_interval_seconds: 10

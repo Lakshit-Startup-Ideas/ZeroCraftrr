@@ -1,46 +1,50 @@
-from functools import lru_cache
-from typing import List
-
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
+from typing import List, Union
+from pydantic import AnyHttpUrl, PostgresDsn, validator
+from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    """
-    Central application configuration loaded from environment variables.
-    Defaults support local development via the repository-level .env file.
-    """
+    PROJECT_NAME: str = "ZeroCraftr"
+    API_V1_STR: str = "/api/v1"
+    SECRET_KEY: str = "CHANGE_THIS_IN_PRODUCTION_SECRET_KEY"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    
+    # CORS
+    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=False)
+    @validator("BACKEND_CORS_ORIGINS", pre=True)
+    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        if isinstance(v, str) and not v.startswith("["):
+            return [i.strip() for i in v.split(",")]
+        elif isinstance(v, (list, str)):
+            return v
+        raise ValueError(v)
 
-    app_name: str = "ZeroCraftr Backend"
-    api_v1_prefix: str = "/api/v1"
-    secret_key: str
-    algorithm: str = "HS256"
-    access_token_expire_minutes: int = 60
+    # Database
+    POSTGRES_SERVER: str = "localhost"
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "password"
+    POSTGRES_DB: str = "zerocraftr"
+    SQLALCHEMY_DATABASE_URI: Union[str, None] = None
 
-    database_url: str
-    redis_url: str
-    mqtt_broker_url: str
-    minio_endpoint: str = "http://minio:9000"
-    minio_access_key: str = "minio"
-    minio_secret_key: str = "minio123"
-    minio_bucket_reports: str = "zerocraftr-reports"
-    smtp_server: str | None = None
-    smtp_port: int = 587
-    smtp_username: str | None = None
-    smtp_password: str | None = None
-    alert_webhook_url: str | None = None
-    ai_engine_url: str = "http://ai-engine:9000"
-    ai_forecast_url: str = "http://ai-forecast:9001"
-    ai_optimize_url: str = "http://ai-optimize:9002"
-    ai_insights_url: str = "http://ai-insights:9003"
-    ai_retrain_url: str = "http://ai-retrain:9004"
-    slack_bot_token: str | None = None
+    @validator("SQLALCHEMY_DATABASE_URI", pre=True)
+    def assemble_db_connection(cls, v: Union[str, None], values: dict) -> str:
+        if isinstance(v, str):
+            return v
+        return PostgresDsn.build(
+            scheme="postgresql+asyncpg",
+            username=values.get("POSTGRES_USER"),
+            password=values.get("POSTGRES_PASSWORD"),
+            host=values.get("POSTGRES_SERVER"),
+            path=values.get("POSTGRES_DB") or "",
+        ).unicode_string()
 
-    emission_factor: float = 0.82  # kg CO2e per kWh
-    waste_factors: List[float] = [2.5, 1.5, 0.5]  # placeholder emission factors by waste type
+    # MQTT
+    MQTT_BROKER_HOST: str = "localhost"
+    MQTT_BROKER_PORT: int = 1883
+    MQTT_CLIENT_ID: str = "zerocraftr-backend"
 
+    class Config:
+        case_sensitive = True
+        env_file = ".env"
 
-@lru_cache
-def get_settings() -> Settings:
-    return Settings()
+settings = Settings()

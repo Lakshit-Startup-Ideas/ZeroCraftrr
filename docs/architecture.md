@@ -1,42 +1,49 @@
-# ZeroCraftr Architecture
+# ZeroCraftr System Architecture
 
+```mermaid
+graph TD
+    subgraph "IoT Edge Layer"
+        D[Devices / PLC] -->|MQTT| G[IoT Gateway]
+        G -->|MQTT| B[Mosquitto Broker]
+    end
+
+    subgraph "Backend Layer"
+        B -->|Subscribe| I[Ingestion Service]
+        I -->|Validate & Normalize| I
+        I -->|Write| DB[(TimescaleDB)]
+        
+        API[FastAPI Backend] -->|Query| DB
+        API -->|Auth| DB
+        
+        W[Aggregation Worker] -->|Continuous Agg| DB
+    end
+
+    subgraph "ML Layer"
+        T[Training Service] -->|Read History| DB
+        T -->|Log Model| R[MLflow Registry]
+        P[Inference Service] -->|Load Model| R
+        API -->|Request Prediction| P
+    end
+
+    subgraph "Frontend Layer"
+        UI[React Dashboard] -->|REST API| API
+        UI -->|WebSocket| API
+    end
+
+    subgraph "Infrastructure"
+        K8s[Kubernetes Cluster]
+        Docker[Docker Containers]
+    end
 ```
-IoT Sensors -> IoT Edge Agent -> MQTT Broker
-                           |                                           |                 -> FastAPI Backend -> PostgreSQL
-                           |                                   \-> Redis
-React Frontend <- FastAPI Backend <- AI Microservices (Forecast / Optimize / Insights / Retrain)
-                                       |
-                                 Prometheus + MinIO -> Grafana
-```
 
-## Components
-- **IoT Edge Agent:** Publishes telemetry via MQTT and REST; buffers outages in SQLite.
-- **MQTT Broker:** Eclipse Mosquitto container for device messaging.
-- **Backend API:** FastAPI app handling auth, device CRUD, telemetry ingestion, aggregation, alerts, and `/api/v2` AI proxy routes.
-- **Database Layer:** PostgreSQL for relational data; Redis for caching summaries and event queues.
-- **AI Microservices:** Forecast ensemble (Torch + Prophet + RandomForest), Optuna optimizer, transformer insight generator, and retraining/registry pipeline uploading AES-256 encrypted artifacts to MinIO.
-- **Frontend:** React dashboard with Forecast, Optimization, AI Insights, and Model Center pages, powered by Chart.js, D3, Axios, and Toast notifications.
-- **Monitoring:** Prometheus scrapes backend and every AI service; Grafana dashboard JSON lives at `docs/grafana/ai-latency-dashboard.json`.
+## Component Description
 
-## Data Flow
-1. Edge agent collects sensor readings and publishes MQTT messages (`zerocraftr/telemetry/<device>`).
-2. Backend ingests telemetry (MQTT/REST), hashes device identifiers, and persists records into PostgreSQL.
-3. Aggregation services compute kWh and CO2e via the trapezoidal rule and emission factors; results cache in Redis and drive alerts.
-4. Backend `/api/v2` routes call the appropriate AI microservice via `ai_bridge.py` with JWT fan-out and Prometheus instrumentation.
-5. React client calls `/telemetry/summary`, `/devices`, and the `/api/v2/*` endpoints to render charts, optimization cards, insights, and model registry actions.
-
-## Deployment Pipeline
-- **CI (GitHub Actions):** `ci.yml` for backend/frontend plus `ai-ci.yml` for AI regression + Docker builds.
-- **CD:** Webhook triggers for Render (backend) and Vercel (frontend); Helm chart (`deployment/helm/ai`) for AI workloads including CronJob and PVC.
-- **Runtime:** Docker Compose for local parity (backend, frontend, IoT edge, Prometheus, Grafana, MinIO, AI microservices) and Kubernetes manifests for production.
-
-## Security Considerations
-- JWT-based OAuth2 login; passwords hashed with bcrypt; device identifiers SHA-256 hashed before storage.
-- AI services require Bearer JWT verification using `AI_JWT_SECRET` and encrypt MinIO uploads via SSE-C AES-256.
-- Secrets provided via `.env` locally and Kubernetes secrets/Helm values in production.
-
-## Scaling Strategy
-- Backend replicas behind load balancer; PostgreSQL via StatefulSet with PVC; Redis clustered when needed.
-- AI microservices scale independently per workload; retraining job backed by PVC for registry persistence.
-- Frontend served as static assets via CDN (Vercel) or Nginx container.
-- Edge agents independently deployable near factory floor.
+1.  **IoT Gateway**: Edge devices or software pushing telemetry to the broker.
+2.  **Mosquitto Broker**: Central message bus for MQTT.
+3.  **Ingestion Service**: Python/FastAPI service consuming MQTT topics, validating schemas, and writing to TimescaleDB.
+4.  **TimescaleDB**: PostgreSQL extension for time-series data, handling raw telemetry and continuous aggregates.
+5.  **FastAPI Backend**: REST API for frontend, handling Auth, CRUD, and data retrieval.
+6.  **ML System**:
+    *   **Training**: Batch jobs to retrain models.
+    *   **Inference**: Real-time optimization recommendations.
+7.  **React Dashboard**: User interface for monitoring and management.

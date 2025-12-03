@@ -1,63 +1,41 @@
-import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
-
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Devices from './pages/Devices';
-import Reports from './pages/Reports';
-import Forecast from './pages/Forecast';
-import Optimization from './pages/Optimization';
-import AIInsights from './pages/AIInsights';
-import ModelCenter from './pages/ModelCenter';
+import Alerts from './pages/Alerts';
+import Settings from './pages/Settings';
+import Layout from './components/Layout';
 
-const navItems = [
-  { path: '/', label: 'Dashboard' },
-  { path: '/devices', label: 'Devices' },
-  { path: '/reports', label: 'Reports' },
-  { path: '/forecast', label: 'Forecast' },
-  { path: '/optimization', label: 'Optimization' },
-  { path: '/ai-insights', label: 'AI Insights' },
-  { path: '/model-center', label: 'Model Center' }
-];
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+  return <>{children}</>;
+};
 
-const App = () => (
-  <BrowserRouter>
-    <div className="min-h-screen bg-slate-100">
-      <header className="bg-white shadow">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-semibold text-primary">ZeroCraftr</span>
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">MVP</span>
-          </div>
-          <nav className="flex gap-6 text-sm font-medium text-slate-600">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  `transition hover:text-primary ${isActive ? 'text-primary' : ''}`
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl px-6 py-8">
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/devices" element={<Devices />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/forecast" element={<Forecast />} />
-          <Route path="/optimization" element={<Optimization />} />
-          <Route path="/ai-insights" element={<AIInsights />} />
-          <Route path="/model-center" element={<ModelCenter />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<Dashboard />} />
+            <Route path="devices" element={<Devices />} />
+            <Route path="alerts" element={<Alerts />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
         </Routes>
-      </main>
-      <ToastContainer position="bottom-right" theme="colored" />
-    </div>
-  </BrowserRouter>
-);
+      </Router>
+    </AuthProvider>
+  );
+}
 
 export default App;

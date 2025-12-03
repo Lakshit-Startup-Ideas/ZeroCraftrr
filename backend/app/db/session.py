@@ -1,34 +1,14 @@
-from contextlib import contextmanager
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from app.core.config import settings
 
-from ..core.config import get_settings
+engine = create_async_engine(settings.SQLALCHEMY_DATABASE_URI, future=True, echo=True)
 
-settings = get_settings()
+AsyncSessionLocal = sessionmaker(
+    engine, class_=AsyncSession, expire_on_commit=False
+)
 
-engine = create_engine(settings.database_url, pool_pre_ping=True)
-
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-def get_db() -> Session:
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-@contextmanager
-def session_scope() -> Session:
-    """Provide a transactional scope for scripts and background tasks."""
-    session = SessionLocal()
-    try:
+async def get_db():
+    async with AsyncSessionLocal() as session:
         yield session
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()

@@ -1,0 +1,29 @@
+backend:
+  replicaCount: 1
+  image:
+    repository: zerocraftr/backend
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 8000
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: zerocraftr/frontend
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: LoadBalancer
+    port: 80
+
+postgres:
+  enabled: true
+  auth:
+    username: postgres
+    password: password
+    database: zerocraftr
+
+mqtt:
+  enabled: true

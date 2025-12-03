@@ -1,42 +1,34 @@
-from contextlib import suppress
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api.v1 import auth, devices, telemetry
-from .api.v2 import ai as ai_v2
-from .core.config import get_settings
-from .db.models import metadata
-from .db.session import engine
-
-settings = get_settings()
+from app.core.config import settings
+from app.api.api_v1.api import api_router
 
 app = FastAPI(
-    title=settings.app_name,
-    version="0.1.0",
-    openapi_url=f"{settings.api_v1_prefix}/openapi.json",
+    title=settings.PROJECT_NAME,
+    openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Set all CORS enabled origins
+if settings.BACKEND_CORS_ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
+app.include_router(api_router, prefix=settings.API_V1_STR)
 
-@app.on_event("startup")
-def on_startup() -> None:
-    metadata.create_all(bind=engine)
+# Import and include ingestion router
+from app.ingestion.http_ingest import router as ingestion_router
+app.include_router(ingestion_router, prefix="/api/ingestion", tags=["ingestion"])
 
+# Initialize MQTT
+from app.ingestion.mqtt_consumer import fast_mqtt
+fast_mqtt.init_app(app)
 
-@app.get("/healthz")
-def healthcheck() -> dict[str, str]:
-    return {"status": "ok"}
-
-
-app.include_router(auth.router, prefix=settings.api_v1_prefix)
-app.include_router(devices.router, prefix=settings.api_v1_prefix)
-app.include_router(telemetry.router, prefix=settings.api_v1_prefix)
-app.include_router(ai_v2.router, prefix="/api/v2")
+@app.get("/")
+def root():
+    return {"message": "Welcome to ZeroCraftr API"}

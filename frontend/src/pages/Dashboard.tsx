@@ -1,51 +1,69 @@
-import KpiCard from '../components/KpiCard'
-import TrendChart from '../components/TrendChart'
-import AlertList from '../components/AlertList'
-import useTelemetry from '../hooks/useTelemetry'
-import { formatCo2, formatEnergy, formatWaste } from '../utils/format'
+import React from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-const Dashboard = () => {
-  const { metrics, alerts, loading } = useTelemetry()
+const data = [
+    { name: '00:00', temp: 24, power: 120 },
+    { name: '04:00', temp: 23, power: 110 },
+    { name: '08:00', temp: 26, power: 140 },
+    { name: '12:00', temp: 29, power: 180 },
+    { name: '16:00', temp: 28, power: 170 },
+    { name: '20:00', temp: 25, power: 130 },
+];
 
-  const chartData = Array.from({ length: 8 }).map((_, index) => {
-    const timestamp = new Date(Date.now() - (7 - index) * 60 * 60 * 1000).toISOString()
-    return { timestamp, value: metrics.total_energy_kwh / 8 + index * 0.5 }
-  })
+export default function Dashboard() {
+    return (
+        <div className="space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 className="text-gray-500 text-sm font-medium">Total Power Usage</h3>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">1,240 kWh</p>
+                    <span className="text-green-500 text-sm font-medium">↓ 12% from yesterday</span>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 className="text-gray-500 text-sm font-medium">Active Devices</h3>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">24/25</p>
+                    <span className="text-gray-500 text-sm font-medium">1 Offline</span>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 className="text-gray-500 text-sm font-medium">Efficiency Score</h3>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">94%</p>
+                    <span className="text-green-500 text-sm font-medium">↑ 2% from last week</span>
+                </div>
+            </div>
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-sm font-medium text-primary">Sustainability Control Tower</p>
-        <h1 className="mt-1 text-3xl font-semibold text-slate-900">
-          Real-time insights for energy, emissions, and waste
-        </h1>
-        <p className="mt-2 text-sm text-slate-500">
-          Monitor device telemetry, proactively detect anomalies, and keep your ESG targets in
-          check with ZeroCraftr.
-        </p>
-      </div>
+            {/* Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Temperature Trend</h3>
+                    <div className="h-80">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={data}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis />
+                                <Tooltip />
+                                <Line type="monotone" dataKey="temp" stroke="#8884d8" strokeWidth={2} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="Energy (24h)" value={formatEnergy(metrics.total_energy_kwh)} delta={3.2} />
-        <KpiCard label="CO₂ Emissions" value={formatCo2(metrics.total_co2_kg)} delta={-1.4} />
-        <KpiCard label="Waste Output" value={formatWaste(metrics.total_waste_kg)} delta={2.1} />
-        <KpiCard label="Waste CO₂e" value={formatCo2(metrics.total_waste_co2_kg)} delta={0.8} />
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <TrendChart data={chartData} metricLabel="Energy Consumption Trend" />
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Power Consumption</h3>
+                    <div className="h-80">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={data}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis />
+                                <Tooltip />
+                                <Line type="monotone" dataKey="power" stroke="#82ca9d" strokeWidth={2} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
         </div>
-        <AlertList alerts={alerts} />
-      </div>
-
-      {loading ? (
-        <div className="rounded-lg bg-white p-6 text-center text-sm text-slate-500 shadow">
-          Loading telemetry...
-        </div>
-      ) : null}
-    </div>
-  )
+    );
 }
-
-export default Dashboard

@@ -1,23 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
 # Node
 node_modules/
 dist/
-.vite/
+build/
+.next/
+out/
 
-# Python
-__pycache__/
-*.pyc
-.env
-*.sqlite
-/.coverage
-htmlcov/
+# Docker
+.docker/
 
-# Logs
-logs/
-*.log
-
-# Build artifacts
-docker-compose.override.yml
-
-# VSCode
-.vscode/
+# IDE
 .idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

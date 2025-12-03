@@ -1,7 +1,7 @@
 torch==2.5.0
 transformers==4.45.0
 optuna==3.6.0
-prophet==1.2.4
+prophet==1.2.1
 scikit-learn==1.6.1
 joblib==1.4.2
 pandas==2.2.3

@@ -1,14 +1,14 @@
 import mlflow
 import mlflow.sklearn
+import mlflow.lightgbm
 import pandas as pd
 import numpy as np
-from sklearn.ensemble import RandomForestRegressor
+import lightgbm as lgb
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
 import logging
 import psycopg2
 import os
-from urllib.parse import urlparse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -67,29 +67,41 @@ def train():
         return
 
     # Prepare Features and Target
-    # Target: Predict next hour temperature (simplified: current temp is target for previous features)
-    # In reality, we'd shift target, but here we use current row as "next" relative to "prev_temp"
     X = df[['hour', 'day', 'prev_temp', 'prev_pressure']]
     y = df['temperature']
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
     with mlflow.start_run():
-        params = {"n_estimators": 100, "max_depth": 10}
+        params = {
+            "objective": "regression",
+            "metric": "rmse",
+            "num_leaves": 31,
+            "learning_rate": 0.05,
+            "feature_fraction": 0.9
+        }
         mlflow.log_params(params)
         
-        logger.info("Training model...")
-        model = RandomForestRegressor(**params)
-        model.fit(X_train, y_train)
+        logger.info("Training LightGBM model...")
+        train_data = lgb.Dataset(X_train, label=y_train)
+        test_data = lgb.Dataset(X_test, label=y_test, reference=train_data)
         
-        predictions = model.predict(X_test)
+        model = lgb.train(
+            params,
+            train_data,
+            num_boost_round=100,
+            valid_sets=[test_data],
+            callbacks=[lgb.early_stopping(stopping_rounds=10)]
+        )
+        
+        predictions = model.predict(X_test, num_iteration=model.best_iteration)
         mse = mean_squared_error(y_test, predictions)
         r2 = r2_score(y_test, predictions)
         
         logger.info(f"Model Metrics - MSE: {mse:.4f}, R2: {r2:.4f}")
         mlflow.log_metrics({"mse": mse, "r2": r2})
         
-        mlflow.sklearn.log_model(model, "model")
+        mlflow.lightgbm.log_model(model, "model")
         logger.info("Model saved to MLflow.")
 
 if __name__ == "__main__":

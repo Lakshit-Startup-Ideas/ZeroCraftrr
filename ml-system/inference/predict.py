@@ -1,17 +1,18 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import mlflow.sklearn
+import mlflow.lightgbm
 import pandas as pd
 import numpy as np
 import os
 
 app = FastAPI()
 
-# Load model on startup (mock loading if file not present for CI/CD)
+# Load model on startup
 model = None
 try:
-    # In production, this would load from MLflow Model Registry or local artifact
-    # model = mlflow.sklearn.load_model("models:/zerocraftr-forecasting/Production")
+    # In production, this would load from MLflow Model Registry
+    # For local dev, we might need to point to a specific run or use a local path
+    # model = mlflow.lightgbm.load_model("models:/zerocraftr-forecasting-real/Production")
     pass
 except Exception as e:
     print(f"Warning: Could not load model: {e}")

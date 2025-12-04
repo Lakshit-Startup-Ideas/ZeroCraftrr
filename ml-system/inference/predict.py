@@ -10,6 +10,8 @@ app = FastAPI()
 # Load model on startup
 model = None
 try:
+    mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
+    mlflow.set_tracking_uri(mlflow_uri)
     # In production, this would load from MLflow Model Registry
     # For local dev, we might need to point to a specific run or use a local path
     # model = mlflow.lightgbm.load_model("models:/zerocraftr-forecasting-real/Production")

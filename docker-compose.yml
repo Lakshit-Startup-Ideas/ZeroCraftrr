@@ -29,9 +29,23 @@ services:
   ml-system:
     build: ./ml-system
     ports:
-      - "5000:5000"
+      - "8001:8001"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:password@db:5432/zerocraftr
+    depends_on:
+      - db
+      - mlflow
     volumes:
       - ./ml-system:/app
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.10.0
+    ports:
+      - "5000:5000"
+    command: mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root /mlflow/artifacts --host 0.0.0.0
+    volumes:
+      - mlflow_data:/mlflow
 
   db:
     image: timescale/timescaledb:latest-pg14
@@ -58,3 +72,4 @@ volumes:
   postgres_data:
   mosquitto_data:
   mosquitto_log:
+  mlflow_data:

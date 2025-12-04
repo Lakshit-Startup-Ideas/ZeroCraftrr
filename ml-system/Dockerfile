@@ -8,4 +8,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Default command (can be overridden)
-CMD ["uvicorn", "inference.predict:app", "--host", "0.0.0.0", "--port", "5000"]
+CMD ["uvicorn", "inference.predict:app", "--host", "0.0.0.0", "--port", "8001"]

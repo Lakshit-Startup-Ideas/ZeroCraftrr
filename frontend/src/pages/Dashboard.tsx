@@ -22,7 +22,8 @@ export default function Dashboard() {
 
     useEffect(() => {
         // Connect to WebSocket
-        const ws = new WebSocket('ws://localhost:8000/api/v1/ws/telemetry');
+        const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/api/v1/ws/telemetry';
+        const ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
             console.log('Connected to Telemetry WS');

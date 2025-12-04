@@ -56,7 +56,8 @@ def fetch_data_from_db():
         return pd.DataFrame()
 
 def train():
-    mlflow.set_tracking_uri("http://localhost:5000")
+    mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
+    mlflow.set_tracking_uri(mlflow_uri)
     mlflow.set_experiment("zerocraftr-forecasting-real")
     
     logger.info("Fetching data from database...")

@@ -29,13 +29,14 @@ class TelemetryService:
         )
         db.add(telemetry)
         await db.commit()
+        await db.refresh(telemetry)
         
         # 3. Broadcast to WebSockets
         try:
             msg = json.dumps({
                 "device_id": device_id,
                 "data": data,
-                "timestamp": str(telemetry.time) if hasattr(telemetry, 'time') else None
+                "timestamp": telemetry.time.isoformat() if telemetry.time else None
             })
             await manager.broadcast(msg)
         except Exception as e:

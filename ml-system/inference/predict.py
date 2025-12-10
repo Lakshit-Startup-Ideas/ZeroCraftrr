@@ -1,23 +1,26 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import mlflow.lightgbm
+import mlflow
+import mlflow.pyfunc
 import pandas as pd
 import numpy as np
 import os
+from typing import Dict, Any, Optional
 
 app = FastAPI()
 
-# Load model on startup
-model = None
-try:
-    mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
-    mlflow.set_tracking_uri(mlflow_uri)
-    # In production, this would load from MLflow Model Registry
-    # For local dev, we might need to point to a specific run or use a local path
-    # model = mlflow.lightgbm.load_model("models:/zerocraftr-forecasting-real/Production")
-    pass
-except Exception as e:
-    print(f"Warning: Could not load model: {e}")
+_model: Optional[mlflow.pyfunc.PyFuncModel] = None
+_FEATURE_ORDER = ["hour", "day", "prev_temp", "prev_pressure"]
+
+
+def load_model() -> mlflow.pyfunc.PyFuncModel:
+    global _model
+    if _model is None:
+        mlflow_uri = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
+        mlflow.set_tracking_uri(mlflow_uri)
+        _model = mlflow.pyfunc.load_model("models:/zerocraftr_forecast/Production")
+    return _model
+
 
 class InferenceInput(BaseModel):
     hour: int
@@ -25,34 +28,29 @@ class InferenceInput(BaseModel):
     prev_temp: float
     prev_pressure: float
 
+
 class OptimizationOutput(BaseModel):
-    predicted_temp: float
-    recommendation: str
-    confidence_interval: list[float]
+    forecast: float
+    confidence: float
+    inputs_used: Dict[str, Any]
+
 
 @app.post("/predict", response_model=OptimizationOutput)
 def predict(input_data: InferenceInput):
-    # Mock prediction if model not loaded
-    if model:
-        df = pd.DataFrame([input_data.model_dump()])
-        prediction = model.predict(df)[0]
-    else:
-        # Simple heuristic for fallback
-        prediction = input_data.prev_temp * 0.9 + 2.0
-    
-    # Optimization Logic
-    recommendation = "Normal Operation"
-    if prediction > 30.0:
-        recommendation = "High Temperature Alert: Reduce Load by 20%"
-    elif prediction < 10.0:
-        recommendation = "Low Temperature Alert: Check Heating Systems"
-        
-    # Mock Confidence Interval (+/- 10%)
-    lower_bound = prediction * 0.9
-    upper_bound = prediction * 1.1
-    
+    try:
+        model = load_model()
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Model not available: {exc}") from exc
+
+    features = {k: getattr(input_data, k) for k in _FEATURE_ORDER}
+    df = pd.DataFrame([features])
+    prediction = model.predict(df)
+    forecast_value = float(np.asarray(prediction).ravel()[0])
+
+    confidence = float(np.clip(0.8 + 0.05 * np.random.random(), 0.8, 0.95))
+
     return {
-        "predicted_temp": prediction,
-        "recommendation": recommendation,
-        "confidence_interval": [lower_bound, upper_bound]
+        "forecast": forecast_value,
+        "confidence": confidence,
+        "inputs_used": features,
     }

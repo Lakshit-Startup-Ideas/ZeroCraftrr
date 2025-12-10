@@ -66,3 +66,10 @@ async def register_user(
     await db.commit()
     await db.refresh(user)
     return user
+
+
+@router.get("/users/me", response_model=UserSchema)
+async def read_users_me(
+    current_user: User = Depends(deps.get_current_active_user),
+) -> Any:
+    return current_user

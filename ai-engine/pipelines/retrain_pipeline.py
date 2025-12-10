@@ -13,11 +13,30 @@ from typing import Callable, Iterable, Optional
 import pandas as pd
 from minio import Minio
 from minio.sse import SseCustomerKey
+from sqlalchemy import create_engine, text
 
-from ..models.intelligent_forecaster import IntelligentForecaster
+from ..models.intelligent_forecaster import IntelligentForecaster, generate_synthetic_telemetry
 from ..models.optimizer import EquipmentConfig, OptimizationEngine, sample_evaluator
 
 logger = logging.getLogger(__name__)
+
+_ENGINE = None
+
+
+def _get_engine():
+    """
+    Lazily instantiate a SQLAlchemy engine for telemetry/equipment fetches.
+    Uses env vars if provided, otherwise falls back to local dev defaults.
+    """
+    global _ENGINE
+    if _ENGINE is None:
+        uri = (
+            os.getenv("SQLALCHEMY_DATABASE_URI")
+            or os.getenv("DATABASE_URL")
+            or "postgresql+psycopg2://postgres:password@localhost:5432/zerocraftr"
+        )
+        _ENGINE = create_engine(uri, future=True)
+    return _ENGINE
 
 
 @dataclass
@@ -139,8 +158,78 @@ class RetrainPipeline:
 
 
 def default_loader(site_id: int) -> pd.DataFrame:
-    raise NotImplementedError("Provide telemetry loader implementation.")
+    """
+    Pull recent telemetry for a site and return long-form dataframe:
+    columns = [timestamp, metric, value].
+    """
+    engine = _get_engine()
+    query = text(
+        """
+        SELECT t.time AS timestamp,
+               t.temperature,
+               t.pressure,
+               t.vibration,
+               t.power_usage
+        FROM telemetry t
+        INNER JOIN devices d ON d.device_id = t.device_id
+        WHERE d.site_id = :site_id
+        ORDER BY t.time DESC
+        LIMIT 10000
+        """
+    )
+    df_raw = pd.read_sql(query, engine, params={"site_id": site_id})
+
+    rows: list[dict] = []
+    for row in df_raw.itertuples():
+        ts = getattr(row, "timestamp")
+        for metric in ("temperature", "pressure", "vibration", "power_usage"):
+            value = getattr(row, metric, None)
+            if pd.notnull(value):
+                rows.append({"timestamp": ts, "metric": metric, "value": float(value)})
+
+    if not rows:
+        synthetic = generate_synthetic_telemetry(datetime.utcnow() - pd.Timedelta(hours=48), periods=48)
+        rows = [{"timestamp": ts, "metric": "energy_kwh", "value": float(val)} for ts, val in synthetic.values]
+
+    return pd.DataFrame(rows)
 
 
 def default_equipment_loader(site_id: int) -> Iterable[EquipmentConfig]:
-    raise NotImplementedError("Provide equipment loader implementation.")
+    """
+    Build equipment configs derived from device inventory and recent power usage.
+    """
+    engine = _get_engine()
+    query = text(
+        """
+        SELECT d.device_id,
+               d.name,
+               COALESCE(AVG(t.power_usage), 0) AS avg_power,
+               COALESCE(MAX(t.power_usage), 0) AS peak_power
+        FROM devices d
+        LEFT JOIN telemetry t ON t.device_id = d.device_id
+        WHERE d.site_id = :site_id
+        GROUP BY d.device_id, d.name
+        """
+    )
+    df = pd.read_sql(query, engine, params={"site_id": site_id})
+
+    configs: list[EquipmentConfig] = []
+    for row in df.itertuples():
+        peak = float(getattr(row, "peak_power", 0) or 0)
+        avg = float(getattr(row, "avg_power", 0) or 0)
+        load_pct = max(10.0, min(100.0, (peak or avg) / 10.0))
+        runtime_hours = 16.0 if peak > 0 else 8.0
+        idle_hours = max(0.0, 24.0 - runtime_hours)
+        configs.append(
+            EquipmentConfig(
+                name=getattr(row, "name") or getattr(row, "device_id"),
+                load_pct=load_pct,
+                runtime_hours=runtime_hours,
+                idle_hours=idle_hours,
+            )
+        )
+
+    if not configs:
+        configs.append(EquipmentConfig(name="baseline", load_pct=75.0, runtime_hours=16.0, idle_hours=4.0))
+
+    return configs

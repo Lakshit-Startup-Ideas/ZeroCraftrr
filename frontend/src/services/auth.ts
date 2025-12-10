@@ -14,6 +14,33 @@ export const login = async (username, password) => {
 };
 
 export const getMe = async () => {
-    // Placeholder if we had a /users/me endpoint, or decode token
-    return { name: 'Admin User' };
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+
+    try {
+        const [, payload] = token.split('.');
+        const decoded = JSON.parse(atob(payload));
+        if (decoded?.exp && Date.now() >= decoded.exp * 1000) {
+            localStorage.removeItem('token');
+            window.dispatchEvent(new Event('auth:logout'));
+            return null;
+        }
+    } catch (err) {
+        // malformed token; clear it
+        localStorage.removeItem('token');
+        window.dispatchEvent(new Event('auth:logout'));
+        return null;
+    }
+
+    try {
+        const response = await api.get('/users/me');
+        return response.data;
+    } catch (error: any) {
+        if (error?.response?.status === 401 || error?.response?.status === 403) {
+            localStorage.removeItem('token');
+            window.dispatchEvent(new Event('auth:logout'));
+            return null;
+        }
+        throw error;
+    }
 };

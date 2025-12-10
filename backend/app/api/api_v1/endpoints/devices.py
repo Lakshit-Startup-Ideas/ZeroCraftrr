@@ -1,7 +1,7 @@
-from typing import Any, List
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Any, List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from app.api import deps
 from app.db.session import get_db
@@ -14,10 +14,16 @@ router = APIRouter()
 async def read_devices(
     skip: int = 0,
     limit: int = 100,
+    search: Optional[str] = Query(None, description="Search by device name or id"),
     db: AsyncSession = Depends(get_db),
     current_user: Any = Depends(deps.get_current_active_user),
 ) -> Any:
-    result = await db.execute(select(Device).offset(skip).limit(limit))
+    query = select(Device)
+    if search:
+        like_pattern = f"%{search}%"
+        query = query.where(or_(Device.name.ilike(like_pattern), Device.device_id.ilike(like_pattern)))
+    query = query.offset(skip).limit(limit)
+    result = await db.execute(query)
     return result.scalars().all()
 
 @router.post("/", response_model=DeviceSchema)

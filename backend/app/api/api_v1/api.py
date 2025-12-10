@@ -1,10 +1,11 @@
 from fastapi import APIRouter
 
-from app.api.api_v1.endpoints import auth, orgs, sites, devices, telemetry, alerts, websockets
+from app.api.api_v1.endpoints import auth, orgs, sites, devices, telemetry, alerts, websockets, users
 
 api_router = APIRouter()
 
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
+api_router.include_router(users.router, prefix="/users", tags=["users"])
 api_router.include_router(orgs.router, prefix="/orgs", tags=["orgs"])
 api_router.include_router(sites.router, prefix="/sites", tags=["sites"])
 api_router.include_router(devices.router, prefix="/devices", tags=["devices"])

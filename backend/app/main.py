@@ -26,8 +26,8 @@ from app.ingestion.http_ingest import router as ingestion_router
 app.include_router(ingestion_router, prefix="/api/ingestion", tags=["ingestion"])
 
 # Initialize MQTT
-from app.ingestion.mqtt_consumer import fast_mqtt
-fast_mqtt.init_app(app)
+# from app.ingestion.mqtt_consumer import fast_mqtt
+# fast_mqtt.init_app(app)
 
 @app.get("/")
 def root():

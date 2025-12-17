@@ -6,11 +6,12 @@ from typing import Any, Dict, Optional
 import httpx
 from fastapi import HTTPException, status
 
-from ..core.config import get_settings
+from ..core.config import settings
+import logging
 
 logger = logging.getLogger(__name__)
-settings = get_settings()
 
+# removed local settings = ...
 
 async def _request(
     method: str,
@@ -37,20 +38,20 @@ async def _request(
 
 
 async def request_forecast(payload: dict[str, Any], token: Optional[str]) -> Dict[str, Any]:
-    return await _request("POST", settings.ai_forecast_url, "/api/v2/forecast/combined", payload, token)
+    return await _request("POST", settings.AI_FORECAST_URL, "/api/v2/forecast/combined", payload, token)
 
 
 async def request_optimization(payload: dict[str, Any], token: Optional[str]) -> Dict[str, Any]:
-    return await _request("POST", settings.ai_optimize_url, "/api/v2/optimize", payload, token)
+    return await _request("POST", settings.AI_OPTIMIZE_URL, "/api/v2/optimize", payload, token)
 
 
 async def request_insight(payload: dict[str, Any], token: Optional[str]) -> Dict[str, Any]:
-    return await _request("POST", settings.ai_insights_url, "/api/v2/insights", payload, token)
+    return await _request("POST", settings.AI_INSIGHTS_URL, "/api/v2/insights", payload, token)
 
 
 async def trigger_retrain(payload: dict[str, Any], token: Optional[str]) -> Dict[str, Any]:
-    return await _request("POST", settings.ai_retrain_url, "/api/v2/models/retrain", payload, token)
+    return await _request("POST", settings.AI_RETRAIN_URL, "/api/v2/models/retrain", payload, token)
 
 
 async def fetch_models(token: Optional[str]) -> Dict[str, Any]:
-    return await _request("GET", settings.ai_retrain_url, "/api/v2/models/list", None, token)
+    return await _request("GET", settings.AI_RETRAIN_URL, "/api/v2/models/list", None, token)

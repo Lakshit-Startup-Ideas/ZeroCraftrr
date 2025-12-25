@@ -1,237 +1,251 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import api from '../services/api';
-
-interface TelemetryPoint {
-    name: string;
-    temp: number;
-    power: number;
-}
+import React, { useEffect, useMemo, useState } from 'react';
+import { Activity, RefreshCw, Server, Shield, Zap } from 'lucide-react';
+import { fetchDevices, fetchHealth, fetchTelemetry, fetchTelemetryAggregate } from '../services/data';
 
 interface Device {
-    id: number;
+    id?: number;
+    name?: string;
     device_id: string;
-    name: string;
-    is_active: boolean;
-    site_id: number;
+    is_active?: boolean;
 }
 
-export default function Dashboard() {
-    const [data, setData] = useState<TelemetryPoint[]>([]);
-    const [isConnected, setIsConnected] = useState(false);
+interface TelemetryRecord {
+    device_id?: string;
+    temperature?: number;
+    power_usage?: number;
+    time?: string;
+    timestamp?: string;
+}
+
+const Dashboard: React.FC = () => {
     const [devices, setDevices] = useState<Device[]>([]);
-    const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
-    const [stats, setStats] = useState<{ total: number; active: number } | null>(null);
-    const [loading, setLoading] = useState(true);
-    const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const [telemetry, setTelemetry] = useState<TelemetryRecord[]>([]);
+    const [aggregate, setAggregate] = useState<any>(null);
+    const [health, setHealth] = useState<string>('Checking…');
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string>('');
 
-    const hydrateDevices = async () => {
+    const loadData = async () => {
+        setLoading(true);
+        setError('');
         try {
-            const res = await api.get<Device[]>('/devices');
-            setDevices(res.data);
-            setStats({
-                total: res.data.length,
-                active: res.data.filter((d) => d.is_active).length,
-            });
-            if (!selectedDevice && res.data.length > 0) {
-                setSelectedDevice(res.data[0].device_id);
-            }
+            const [deviceData, telemetryData, aggregateData, healthData] = await Promise.all([
+                fetchDevices(),
+                fetchTelemetry({ limit: 10 }),
+                fetchTelemetryAggregate(),
+                fetchHealth(),
+            ]);
+            setDevices(deviceData || []);
+            setTelemetry(Array.isArray(telemetryData) ? telemetryData : []);
+            setAggregate(aggregateData ?? null);
+            setHealth(
+                typeof healthData === 'object' && healthData !== null
+                    ? Object.values(healthData)[0]?.toString() || 'Unknown'
+                    : (healthData as string) || 'Unknown'
+            );
         } catch (err) {
-            console.error('Failed to fetch devices', err);
-            setStats(null);
-        }
-    };
-
-    const fetchTelemetrySnapshot = async (deviceId: string) => {
-        try {
-            const res = await api.get('/telemetry', { params: { device_id: deviceId, limit: 50 } });
-            const points: TelemetryPoint[] = (res.data || []).map((item: any) => ({
-                name: new Date(item.time || item.timestamp || Date.now()).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                }),
-                temp: item.temperature || 0,
-                power: item.power_usage || 0,
-            }));
-            setData(points.slice(-20));
-        } catch (err) {
-            console.error('Failed to fetch telemetry snapshot', err);
+            console.error('Failed to load dashboard data', err);
+            setError('We could not fetch live data. Please try refreshing.');
         } finally {
             setLoading(false);
         }
     };
 
-    const startPolling = (deviceId: string) => {
-        if (pollRef.current) clearInterval(pollRef.current);
-        pollRef.current = setInterval(() => fetchTelemetrySnapshot(deviceId), 15000);
-    };
-
     useEffect(() => {
-        hydrateDevices();
+        loadData();
     }, []);
 
-    useEffect(() => {
-        if (!selectedDevice) return;
-        fetchTelemetrySnapshot(selectedDevice);
-        startPolling(selectedDevice);
+    const activeDevices = devices.filter((d) => d.is_active).length;
 
-        const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/api/v1/ws/telemetry';
-        const ws = new WebSocket(wsUrl);
+    const aggregateMetrics = useMemo(() => {
+        if (!aggregate) return [];
+        if (Array.isArray(aggregate)) {
+            return aggregate.slice(0, 3).map((item, idx) => ({
+                label: item?.metric || item?.name || `Metric ${idx + 1}`,
+                value: item?.value ?? item?.average ?? item?.avg ?? '—',
+            }));
+        }
+        return Object.entries(aggregate)
+            .slice(0, 4)
+            .map(([key, value]) => ({
+                label: key.replace(/_/g, ' '),
+                value: typeof value === 'number' ? value.toFixed(2) : String(value),
+            }));
+    }, [aggregate]);
 
-        ws.onopen = () => setIsConnected(true);
-        ws.onmessage = (event) => {
-            try {
-                const message = JSON.parse(event.data);
-                const { timestamp, data: telemetry } = message;
-                const deviceId = message.device_id;
-                if (selectedDevice && deviceId !== selectedDevice) return;
-
-                const timeLabel = new Date(timestamp || Date.now()).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                });
-
-                setData((prev) => {
-                    const next = [
-                        ...prev,
-                        {
-                            name: timeLabel,
-                            temp: telemetry?.temperature || 0,
-                            power: telemetry?.power_usage || 0,
-                        },
-                    ];
-                    return next.slice(-20);
-                });
-            } catch (e) {
-                console.error('Error parsing WS message', e);
-            }
-        };
-        ws.onerror = () => {
-            setIsConnected(false);
-            startPolling(selectedDevice);
-        };
-        ws.onclose = () => {
-            setIsConnected(false);
-            startPolling(selectedDevice);
-        };
-
-        return () => {
-            ws.close();
-            if (pollRef.current) clearInterval(pollRef.current);
-        };
-    }, [selectedDevice]);
-
-    const latest = data.length ? data[data.length - 1] : null;
+    const recentTelemetry = telemetry.slice(0, 5);
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
+        <div className="space-y-8">
+            <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h2 className="text-xl font-semibold text-gray-800">Live Dashboard</h2>
-                    <p className="text-sm text-gray-500">Streaming telemetry with REST fallback</p>
+                    <p className="text-sm font-semibold uppercase tracking-wide text-indigo-600">Dashboard</p>
+                    <h1 className="text-2xl font-bold text-slate-900">Live operations overview</h1>
+                    <p className="text-slate-600">Devices, telemetry, and system health pulled directly from the API.</p>
                 </div>
-                <div className="flex items-center space-x-3">
-                    <select
-                        className="border rounded px-3 py-2 text-sm"
-                        value={selectedDevice || ''}
-                        onChange={(e) => setSelectedDevice(e.target.value || null)}
-                    >
-                        <option value="">Select device</option>
-                        {devices.map((d) => (
-                            <option key={d.device_id} value={d.device_id}>
-                                {d.name || d.device_id}
-                            </option>
-                        ))}
-                    </select>
-                    <span
-                        className={`px-2 py-1 rounded text-xs font-semibold ${
-                            isConnected ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                    >
-                        {isConnected ? 'Live Connected' : 'REST Fallback'}
-                    </span>
+                <button
+                    onClick={loadData}
+                    className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600"
+                >
+                    <RefreshCw className="h-4 w-4" />
+                    Refresh data
+                </button>
+            </div>
+
+            {error && (
+                <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+            )}
+
+            <div className="grid gap-4 md:grid-cols-4">
+                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-slate-600">Health</p>
+                        <Shield className="h-5 w-5 text-indigo-600" />
+                    </div>
+                    <p className="mt-2 text-2xl font-semibold text-slate-900">{health}</p>
+                    <p className="text-xs text-slate-500">/api/v1/health</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-slate-600">Devices online</p>
+                        <Server className="h-5 w-5 text-indigo-600" />
+                    </div>
+                    <p className="mt-2 text-2xl font-semibold text-slate-900">
+                        {activeDevices}/{devices.length}
+                    </p>
+                    <p className="text-xs text-slate-500">Active / total</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-slate-600">Telemetry samples</p>
+                        <Activity className="h-5 w-5 text-indigo-600" />
+                    </div>
+                    <p className="mt-2 text-2xl font-semibold text-slate-900">{telemetry.length}</p>
+                    <p className="text-xs text-slate-500">Latest pull</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-slate-600">AI aggregates</p>
+                        <Zap className="h-5 w-5 text-indigo-600" />
+                    </div>
+                    <p className="mt-2 text-2xl font-semibold text-slate-900">{aggregateMetrics.length || '—'}</p>
+                    <p className="text-xs text-slate-500">From /telemetry/aggregate</p>
                 </div>
             </div>
 
-            {(!devices.length || !selectedDevice) && (
-                <div className="bg-white p-6 rounded-lg shadow-sm text-gray-600">
-                    No devices available yet. Add a device to start streaming telemetry.
+            <div className="grid gap-6 lg:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-lg font-semibold text-slate-900">Devices</h3>
+                            <p className="text-sm text-slate-600">Pulled from /devices</p>
+                        </div>
+                    </div>
+                    <div className="mt-4 space-y-3">
+                        {devices.length === 0 ? (
+                            <p className="text-sm text-slate-600">No devices yet. Register hardware to see it here.</p>
+                        ) : (
+                            devices.slice(0, 5).map((device) => (
+                                <div
+                                    key={device.device_id}
+                                    className="flex items-center justify-between rounded-lg border border-slate-100 px-4 py-3"
+                                >
+                                    <div>
+                                        <p className="font-medium text-slate-900">{device.name || device.device_id}</p>
+                                        <p className="text-xs text-slate-500">{device.device_id}</p>
+                                    </div>
+                                    <span
+                                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                            device.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                                        }`}
+                                    >
+                                        {device.is_active ? 'Active' : 'Idle'}
+                                    </span>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-lg font-semibold text-slate-900">AI aggregates</h3>
+                            <p className="text-sm text-slate-600">Signals extracted from telemetry</p>
+                        </div>
+                    </div>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {aggregateMetrics.length === 0 ? (
+                            <p className="text-sm text-slate-600">No aggregate data yet.</p>
+                        ) : (
+                            aggregateMetrics.map((metric) => (
+                                <div key={metric.label} className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                                        {metric.label}
+                                    </p>
+                                    <p className="text-xl font-bold text-slate-900">{metric.value}</p>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h3 className="text-lg font-semibold text-slate-900">Recent telemetry</h3>
+                        <p className="text-sm text-slate-600">Most recent samples from /telemetry</p>
+                    </div>
+                </div>
+                <div className="mt-4 overflow-x-auto">
+                    <table className="min-w-full text-left text-sm">
+                        <thead className="text-xs uppercase tracking-wide text-slate-500">
+                            <tr>
+                                <th className="py-2 pr-4">Device</th>
+                                <th className="py-2 pr-4">Temperature</th>
+                                <th className="py-2 pr-4">Power</th>
+                                <th className="py-2 pr-4">Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-slate-700">
+                            {recentTelemetry.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="py-4 text-slate-600">
+                                        No telemetry records yet.
+                                    </td>
+                                </tr>
+                            ) : (
+                                recentTelemetry.map((record, idx) => (
+                                    <tr key={`${record.device_id}-${idx}`}>
+                                        <td className="py-3 pr-4 font-medium text-slate-900">
+                                            {record.device_id || 'N/A'}
+                                        </td>
+                                        <td className="py-3 pr-4">{record.temperature ?? '—'}°C</td>
+                                        <td className="py-3 pr-4">{record.power_usage ?? '—'} kWh</td>
+                                        <td className="py-3 pr-4 text-xs text-slate-500">
+                                            {record.timestamp ||
+                                                record.time ||
+                                                new Date().toLocaleString(undefined, {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                })}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {loading && (
+                <div className="text-sm text-slate-600">
+                    Fetching latest data from {import.meta.env.VITE_API_URL || 'API'}...
                 </div>
             )}
-
-            {devices.length > 0 && selectedDevice && (
-                <>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-white p-6 rounded-lg shadow-sm">
-                            <h3 className="text-gray-500 text-sm font-medium">Total Power Usage (latest)</h3>
-                            <p className="text-3xl font-bold text-gray-900 mt-2">{latest?.power ?? 0} kWh</p>
-                            <span className="text-green-500 text-sm font-medium">{isConnected ? 'Live' : 'Recent'}</span>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow-sm">
-                            <h3 className="text-gray-500 text-sm font-medium">Active Devices</h3>
-                            <p className="text-3xl font-bold text-gray-900 mt-2">
-                                {stats ? `${stats.active}/${stats.total}` : '—'}
-                            </p>
-                            <span className="text-gray-500 text-sm font-medium">
-                                {stats ? `${stats.total - stats.active} Offline` : 'Unavailable'}
-                            </span>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow-sm">
-                            <h3 className="text-gray-500 text-sm font-medium">Current Temp</h3>
-                            <p className="text-3xl font-bold text-gray-900 mt-2">
-                                {latest ? latest.temp.toFixed(1) : '—'}°C
-                            </p>
-                            <span className="text-green-500 text-sm font-medium">{isConnected ? 'Live' : 'Recent'}</span>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div className="bg-white p-6 rounded-lg shadow-sm">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">Temperature Trend</h3>
-                            <div className="h-80">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={data}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="name" />
-                                        <YAxis />
-                                        <Tooltip />
-                                        <Line
-                                            type="monotone"
-                                            dataKey="temp"
-                                            stroke="#8884d8"
-                                            strokeWidth={2}
-                                            isAnimationActive={false}
-                                        />
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-
-                        <div className="bg-white p-6 rounded-lg shadow-sm">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4">Power Consumption</h3>
-                            <div className="h-80">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={data}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="name" />
-                                        <YAxis />
-                                        <Tooltip />
-                                        <Line
-                                            type="monotone"
-                                            dataKey="power"
-                                            stroke="#82ca9d"
-                                            strokeWidth={2}
-                                            isAnimationActive={false}
-                                        />
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-                    </div>
-                </>
-            )}
-
-            {loading && <div className="text-sm text-gray-500">Loading telemetry…</div>}
         </div>
     );
-}
+};
+
+export default Dashboard;

@@ -39,11 +39,11 @@ const AIOverview: React.FC = () => {
     const aggregateMetrics = useMemo(() => {
         if (!aggregate) return [];
         if (Array.isArray(aggregate)) {
-            return aggregate.slice(0, 4).map((item, idx) => ({
-                label: item?.metric || item?.name || `Signal ${idx + 1}`,
-                value: item?.value ?? item?.average ?? item?.avg ?? '—',
-                context: item?.description || 'AI-derived metric',
-            }));
+                return aggregate.slice(0, 4).map((item, idx) => ({
+                    label: item?.metric || item?.name || `Signal ${idx + 1}`,
+                    value: item?.value ?? item?.average ?? item?.avg ?? 'N/A',
+                    context: item?.description || 'AI-derived metric',
+                }));
         }
         return Object.entries(aggregate)
             .slice(0, 4)
@@ -56,24 +56,24 @@ const AIOverview: React.FC = () => {
 
     return (
         <div className="space-y-10">
-            <div className="rounded-3xl border border-indigo-100 bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 px-8 py-10 text-white shadow-lg">
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="rounded-3xl border border-brand-200/40 bg-gradient-to-br from-brand-700 via-brand-600 to-brand-500 px-8 py-10 text-white shadow-soft">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div className="space-y-3">
-                        <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-sm font-semibold">
+                        <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
                             <Sparkle className="h-4 w-4" />
                             AI Overview
                         </p>
-                        <h1 className="text-3xl font-bold leading-tight md:text-4xl">
+                        <h1 className="text-3xl font-semibold leading-tight md:text-4xl">
                             Explainable AI for telemetry-driven operations
                         </h1>
-                        <p className="max-w-3xl text-lg text-indigo-100">
+                        <p className="max-w-3xl text-lg text-white/80">
                             ZeroCraftr blends raw device data with AI/ML overlays to predict issues before they escalate. All
                             insights come from your live /telemetry and /telemetry/aggregate endpoints.
                         </p>
                     </div>
                     <Link
                         to="/dashboard"
-                        className="inline-flex items-center justify-center rounded-md bg-white px-4 py-2 text-indigo-700 font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+                        className="inline-flex items-center justify-center rounded-md bg-white px-4 py-2 font-semibold text-brand-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
                     >
                         Go to dashboard
                     </Link>
@@ -85,10 +85,10 @@ const AIOverview: React.FC = () => {
             )}
 
             <div className="grid gap-6 lg:grid-cols-3">
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-card">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50">
-                            <Brain className="h-5 w-5 text-indigo-600" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50">
+                            <Brain className="h-5 w-5 text-brand-600" />
                         </div>
                         <div>
                             <p className="text-sm font-semibold text-slate-900">Model inputs</p>
@@ -99,10 +99,10 @@ const AIOverview: React.FC = () => {
                         Real-time temperature, power, and device state become features for anomaly detection and forecast models.
                     </p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-card">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50">
-                            <LineChart className="h-5 w-5 text-indigo-600" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50">
+                            <LineChart className="h-5 w-5 text-brand-600" />
                         </div>
                         <div>
                             <p className="text-sm font-semibold text-slate-900">Aggregations</p>
@@ -113,10 +113,10 @@ const AIOverview: React.FC = () => {
                         Rolling averages, peaks, and stability bands feed into explainable scorecards and sustainability nudges.
                     </p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-card">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50">
-                            <Wand2 className="h-5 w-5 text-indigo-600" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50">
+                            <Wand2 className="h-5 w-5 text-brand-600" />
                         </div>
                         <div>
                             <p className="text-sm font-semibold text-slate-900">AI actions</p>
@@ -130,14 +130,14 @@ const AIOverview: React.FC = () => {
                 </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-card">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <h3 className="text-lg font-semibold text-slate-900">Aggregate signals</h3>
                         <p className="text-sm text-slate-600">Derived directly from /telemetry/aggregate</p>
                     </div>
                     <div className="text-sm text-slate-600">
-                        {loading ? 'Loading signals…' : `${aggregateMetrics.length} signals loaded`}
+                        {loading ? 'Loading signals...' : `${aggregateMetrics.length} signals loaded`}
                     </div>
                 </div>
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -158,7 +158,7 @@ const AIOverview: React.FC = () => {
                 </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-card">
                 <div className="flex items-center justify-between">
                     <div>
                         <h3 className="text-lg font-semibold text-slate-900">Telemetry feed</h3>
@@ -166,7 +166,7 @@ const AIOverview: React.FC = () => {
                     </div>
                     <button
                         onClick={load}
-                        className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600"
+                        className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-brand-200 hover:text-brand-700"
                     >
                         <Radio className="h-4 w-4" />
                         Refresh feed
@@ -193,8 +193,8 @@ const AIOverview: React.FC = () => {
                                 telemetry.map((row, idx) => (
                                     <tr key={`${row.device_id}-${idx}`}>
                                         <td className="py-3 pr-4 font-medium text-slate-900">{row.device_id || 'N/A'}</td>
-                                        <td className="py-3 pr-4">{row.temperature ?? '—'}°C</td>
-                                        <td className="py-3 pr-4">{row.power_usage ?? '—'} kWh</td>
+                                        <td className="py-3 pr-4">{row.temperature ?? 'N/A'} C</td>
+                                        <td className="py-3 pr-4">{row.power_usage ?? 'N/A'} kWh</td>
                                         <td className="py-3 pr-4 text-xs text-slate-500">
                                             {row.timestamp ||
                                                 row.time ||

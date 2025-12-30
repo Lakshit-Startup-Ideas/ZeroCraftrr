@@ -41,30 +41,39 @@ export default function Alerts() {
     };
 
     return (
-        <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-800">System Alerts</h2>
+        <div className="space-y-8">
+            <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Alerts</p>
+                <h2 className="text-2xl font-semibold text-slate-900">System alerts</h2>
+            </div>
 
-            <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-                <div className="divide-y divide-gray-200">
+            <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-card">
+                <div className="divide-y divide-slate-100">
                     {loading ? (
-                        <div className="p-6 text-center text-gray-500">Loading alerts...</div>
+                        <div className="p-6 text-center text-slate-500">Loading alerts...</div>
                     ) : alerts.length === 0 ? (
-                        <div className="p-6 text-center text-gray-500">No active alerts. System is healthy.</div>
+                        <div className="p-6 text-center text-slate-500">No active alerts. System is healthy.</div>
                     ) : (
                         alerts.map((alert) => (
-                            <div key={alert.id} className="p-6 flex items-center justify-between hover:bg-gray-50">
-                                <div className="flex items-center space-x-4">
-                                    <div className={`p-2 rounded-full ${alert.severity === 'CRITICAL' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-600'}`}>
-                                        <AlertTriangle className="w-6 h-6" />
+                            <div key={alert.id} className="flex items-center justify-between gap-4 p-6 hover:bg-slate-50">
+                                <div className="flex items-center gap-4">
+                                    <div
+                                        className={`rounded-full p-2 ${
+                                            alert.severity === 'CRITICAL'
+                                                ? 'bg-red-100 text-red-600'
+                                                : 'bg-yellow-100 text-yellow-600'
+                                        }`}
+                                    >
+                                        <AlertTriangle className="h-6 w-6" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-medium text-gray-900">{alert.message}</h3>
-                                        <div className="flex items-center text-sm text-gray-500 space-x-4">
+                                        <h3 className="text-lg font-medium text-slate-900">{alert.message}</h3>
+                                        <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500">
                                             <span className="flex items-center">
-                                                <Clock className="w-4 h-4 mr-1" />
+                                                <Clock className="mr-1 h-4 w-4" />
                                                 {new Date(alert.created_at).toLocaleString()}
                                             </span>
-                                            <span className="font-mono bg-gray-100 px-2 py-0.5 rounded text-xs">
+                                            <span className="rounded bg-slate-100 px-2 py-0.5 font-mono text-xs">
                                                 {alert.device_id}
                                             </span>
                                         </div>
@@ -74,9 +83,9 @@ export default function Alerts() {
                                 {!alert.is_resolved && (
                                     <button
                                         onClick={() => resolveAlert(alert.id)}
-                                        className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                        className="flex items-center rounded-lg bg-accent-600 px-4 py-2 text-white shadow-sm transition-colors hover:bg-accent-700"
                                     >
-                                        <CheckCircle className="w-4 h-4 mr-2" />
+                                        <CheckCircle className="mr-2 h-4 w-4" />
                                         Resolve
                                     </button>
                                 )}

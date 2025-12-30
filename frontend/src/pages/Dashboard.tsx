@@ -21,7 +21,7 @@ const Dashboard: React.FC = () => {
     const [devices, setDevices] = useState<Device[]>([]);
     const [telemetry, setTelemetry] = useState<TelemetryRecord[]>([]);
     const [aggregate, setAggregate] = useState<any>(null);
-    const [health, setHealth] = useState<string>('Checking…');
+    const [health, setHealth] = useState<string>('Checking...');
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>('');
 
@@ -29,7 +29,7 @@ const Dashboard: React.FC = () => {
         setLoading(true);
         setError('');
         try {
-            const [deviceData, telemetryData, aggregateData, healthData] = await Promise.all([
+                const [deviceData, telemetryData, aggregateData, healthData] = await Promise.all([
                 fetchDevices(),
                 fetchTelemetry({ limit: 10 }),
                 fetchTelemetryAggregate(),
@@ -60,11 +60,11 @@ const Dashboard: React.FC = () => {
     const aggregateMetrics = useMemo(() => {
         if (!aggregate) return [];
         if (Array.isArray(aggregate)) {
-            return aggregate.slice(0, 3).map((item, idx) => ({
-                label: item?.metric || item?.name || `Metric ${idx + 1}`,
-                value: item?.value ?? item?.average ?? item?.avg ?? '—',
-            }));
-        }
+                return aggregate.slice(0, 3).map((item, idx) => ({
+                    label: item?.metric || item?.name || `Metric ${idx + 1}`,
+                    value: item?.value ?? item?.average ?? item?.avg ?? 'N/A',
+                }));
+            }
         return Object.entries(aggregate)
             .slice(0, 4)
             .map(([key, value]) => ({
@@ -76,16 +76,16 @@ const Dashboard: React.FC = () => {
     const recentTelemetry = telemetry.slice(0, 5);
 
     return (
-        <div className="space-y-8">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-10">
+            <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <p className="text-sm font-semibold uppercase tracking-wide text-indigo-600">Dashboard</p>
-                    <h1 className="text-2xl font-bold text-slate-900">Live operations overview</h1>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Dashboard</p>
+                    <h1 className="text-2xl font-semibold text-slate-900">Live operations overview</h1>
                     <p className="text-slate-600">Devices, telemetry, and system health pulled directly from the API.</p>
                 </div>
                 <button
                     onClick={loadData}
-                    className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600"
+                    className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-brand-200 hover:text-brand-700"
                 >
                     <RefreshCw className="h-4 w-4" />
                     Refresh data
@@ -97,44 +97,44 @@ const Dashboard: React.FC = () => {
             )}
 
             <div className="grid gap-4 md:grid-cols-4">
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="rounded-xl border border-slate-200/70 bg-white p-5 shadow-card">
                     <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-slate-600">Health</p>
-                        <Shield className="h-5 w-5 text-indigo-600" />
+                        <Shield className="h-5 w-5 text-brand-600" />
                     </div>
                     <p className="mt-2 text-2xl font-semibold text-slate-900">{health}</p>
                     <p className="text-xs text-slate-500">/api/v1/health</p>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="rounded-xl border border-slate-200/70 bg-white p-5 shadow-card">
                     <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-slate-600">Devices online</p>
-                        <Server className="h-5 w-5 text-indigo-600" />
+                        <Server className="h-5 w-5 text-brand-600" />
                     </div>
                     <p className="mt-2 text-2xl font-semibold text-slate-900">
                         {activeDevices}/{devices.length}
                     </p>
                     <p className="text-xs text-slate-500">Active / total</p>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="rounded-xl border border-slate-200/70 bg-white p-5 shadow-card">
                     <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-slate-600">Telemetry samples</p>
-                        <Activity className="h-5 w-5 text-indigo-600" />
+                        <Activity className="h-5 w-5 text-brand-600" />
                     </div>
                     <p className="mt-2 text-2xl font-semibold text-slate-900">{telemetry.length}</p>
                     <p className="text-xs text-slate-500">Latest pull</p>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="rounded-xl border border-slate-200/70 bg-white p-5 shadow-card">
                     <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-slate-600">AI aggregates</p>
-                        <Zap className="h-5 w-5 text-indigo-600" />
+                        <Zap className="h-5 w-5 text-brand-600" />
                     </div>
-                    <p className="mt-2 text-2xl font-semibold text-slate-900">{aggregateMetrics.length || '—'}</p>
+                    <p className="mt-2 text-2xl font-semibold text-slate-900">{aggregateMetrics.length || 'N/A'}</p>
                     <p className="text-xs text-slate-500">From /telemetry/aggregate</p>
                 </div>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-card">
                     <div className="flex items-center justify-between">
                         <div>
                             <h3 className="text-lg font-semibold text-slate-900">Devices</h3>
@@ -167,7 +167,7 @@ const Dashboard: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-card">
                     <div className="flex items-center justify-between">
                         <div>
                             <h3 className="text-lg font-semibold text-slate-900">AI aggregates</h3>
@@ -191,7 +191,7 @@ const Dashboard: React.FC = () => {
                 </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-card">
                 <div className="flex items-center justify-between">
                     <div>
                         <h3 className="text-lg font-semibold text-slate-900">Recent telemetry</h3>
@@ -221,8 +221,8 @@ const Dashboard: React.FC = () => {
                                         <td className="py-3 pr-4 font-medium text-slate-900">
                                             {record.device_id || 'N/A'}
                                         </td>
-                                        <td className="py-3 pr-4">{record.temperature ?? '—'}°C</td>
-                                        <td className="py-3 pr-4">{record.power_usage ?? '—'} kWh</td>
+                                        <td className="py-3 pr-4">{record.temperature ?? 'N/A'} C</td>
+                                        <td className="py-3 pr-4">{record.power_usage ?? 'N/A'} kWh</td>
                                         <td className="py-3 pr-4 text-xs text-slate-500">
                                             {record.timestamp ||
                                                 record.time ||

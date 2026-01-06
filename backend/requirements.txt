@@ -10,12 +10,12 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 python-multipart==0.0.6
 httpx==0.26.0
-pytest==8.0.0
+pytest==7.4.4
 pytest-asyncio==0.23.4
 gunicorn==21.2.0
 # IoT / MQTT
 paho-mqtt==1.6.1
-fastapi-mqtt==1.1.0
+fastapi-mqtt>=2.0.0
 # ML Integration
 mlflow==2.10.0
 pandas==2.2.0

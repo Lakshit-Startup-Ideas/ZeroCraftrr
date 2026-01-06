@@ -43,8 +43,18 @@ class Settings(BaseSettings):
     MQTT_BROKER_PORT: int = 1883
     MQTT_CLIENT_ID: str = "zerocraftr-backend"
 
+    # ML Integation
+    MLFLOW_TRACKING_URI: str = "http://localhost:5000"
+
+    # AI Service Integration
+    AI_FORECAST_URL: str = "http://localhost:8001"
+    AI_OPTIMIZE_URL: str = "http://localhost:8001"
+    AI_INSIGHTS_URL: str = "http://localhost:8001"
+    AI_RETRAIN_URL: str = "http://localhost:8001"
+
     class Config:
         case_sensitive = True
         env_file = ".env"
+        extra = "forbid"
 
 settings = Settings()

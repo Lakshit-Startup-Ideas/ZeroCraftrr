@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const Login: React.FC = () => {
-    const { login } = useAuth();
+const Register: React.FC = () => {
+    const { register } = useAuth();
     const navigate = useNavigate();
-    const location = useLocation();
-    const redirectPath = (location.state as { from?: string })?.from || '/dashboard';
 
+    const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -15,13 +14,13 @@ const Login: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
         setError('');
+        setLoading(true);
         try {
-            await login(email, password);
-            navigate(redirectPath, { replace: true });
+            await register({ email, password, full_name: fullName });
+            navigate('/dashboard', { replace: true });
         } catch (err) {
-            setError('Unable to log in. Check your credentials and try again.');
+            setError('Could not create your account. Please try again or use a different email.');
         } finally {
             setLoading(false);
         }
@@ -31,8 +30,8 @@ const Login: React.FC = () => {
         <div className="mx-auto max-w-xl space-y-8">
             <div className="card">
                 <div className="mb-6 space-y-2">
-                    <h1 className="text-2xl font-semibold text-ink-900">Welcome back</h1>
-                    <p className="text-ink-600">Access your ZeroCraftr workspace and monitor live telemetry.</p>
+                    <h1 className="text-2xl font-semibold text-ink-900">Create your ZeroCraftr account</h1>
+                    <p className="text-ink-600">Register to start streaming telemetry and AI insights.</p>
                 </div>
 
                 {error && (
@@ -42,6 +41,16 @@ const Login: React.FC = () => {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="label">Full name</label>
+                        <input
+                            type="text"
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                            className="input mt-1"
+                            placeholder="Alex Operator"
+                        />
+                    </div>
                     <div>
                         <label className="label">Email</label>
                         <input
@@ -69,22 +78,22 @@ const Login: React.FC = () => {
                         disabled={loading}
                         className="btn btn-primary w-full disabled:opacity-60"
                     >
-                        {loading ? 'Signing in...' : 'Login'}
+                        {loading ? 'Creating account...' : 'Register'}
                     </button>
                 </form>
             </div>
 
             <div className="card flex items-center justify-between gap-6">
                 <div className="space-y-1">
-                    <p className="text-sm font-semibold text-ink-900">New to ZeroCraftr?</p>
-                    <p className="text-sm text-ink-600">Create an account to start streaming telemetry.</p>
+                    <p className="text-sm font-semibold text-ink-900">Already have an account?</p>
+                    <p className="text-sm text-ink-600">Login to access your dashboards and AI overview.</p>
                 </div>
-                <Link to="/register" className="btn btn-secondary">
-                    Register
+                <Link to="/login" className="btn btn-secondary">
+                    Login
                 </Link>
             </div>
         </div>
     );
 };
 
-export default Login;
+export default Register;

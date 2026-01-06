@@ -1,36 +1,41 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import AppLayout from './layouts/AppLayout';
+import ProtectedRoute from './components/ProtectedRoute';
+import Home from './pages/Home';
+import About from './pages/About';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-import Devices from './pages/Devices';
-import Alerts from './pages/Alerts';
-import Settings from './pages/Settings';
-import Layout from './components/Layout';
-
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
-  if (!isAuthenticated) {
-    return <Navigate to="/login" />;
-  }
-  return <>{children}</>;
-};
+import AIOverview from './pages/AIOverview';
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<Dashboard />} />
-            <Route path="devices" element={<Devices />} />
-            <Route path="alerts" element={<Alerts />} />
-            <Route path="settings" element={<Settings />} />
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ai-overview"
+              element={
+                <ProtectedRoute>
+                  <AIOverview />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
       </Router>

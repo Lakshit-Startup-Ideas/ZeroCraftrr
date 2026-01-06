@@ -55,118 +55,117 @@ const AIOverview: React.FC = () => {
     }, [aggregate]);
 
     return (
-        <div className="space-y-10">
-            <div className="rounded-3xl border border-brand-200/40 bg-gradient-to-br from-brand-700 via-brand-600 to-brand-500 px-8 py-10 text-white shadow-soft">
+        <div className="page">
+            <div className="card">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div className="space-y-3">
-                        <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
-                            <Sparkle className="h-4 w-4" />
+                        <p className="badge inline-flex items-center gap-2">
+                            <Sparkle className="h-4 w-4 text-brand-700" />
                             AI Overview
                         </p>
-                        <h1 className="text-3xl font-semibold leading-tight md:text-4xl">
+                        <h1 className="text-3xl font-semibold leading-tight text-ink-900 md:text-4xl">
                             Explainable AI for telemetry-driven operations
                         </h1>
-                        <p className="max-w-3xl text-lg text-white/80">
+                        <p className="max-w-3xl text-lg text-ink-600">
                             ZeroCraftr blends raw device data with AI/ML overlays to predict issues before they escalate. All
                             insights come from your live /telemetry and /telemetry/aggregate endpoints.
                         </p>
                     </div>
-                    <Link
-                        to="/dashboard"
-                        className="inline-flex items-center justify-center rounded-md bg-white px-4 py-2 font-semibold text-brand-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
-                    >
+                    <Link to="/dashboard" className="btn btn-secondary">
                         Go to dashboard
                     </Link>
                 </div>
             </div>
 
             {error && (
-                <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+                <div className="rounded-lg border border-status-danger/30 bg-red-50 px-4 py-3 text-sm text-status-danger">
+                    {error}
+                </div>
             )}
 
             <div className="grid gap-6 lg:grid-cols-3">
-                <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-card">
+                <div className="card">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50">
-                            <Brain className="h-5 w-5 text-brand-600" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-subtle">
+                            <Brain className="h-5 w-5 text-brand-700" />
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-slate-900">Model inputs</p>
-                            <p className="text-xs text-slate-600">Powered by /telemetry</p>
+                            <p className="text-sm font-semibold text-ink-900">Model inputs</p>
+                            <p className="text-xs text-ink-600">Powered by /telemetry</p>
                         </div>
                     </div>
-                    <p className="mt-3 text-slate-700">
+                    <p className="mt-3 text-ink-700">
                         Real-time temperature, power, and device state become features for anomaly detection and forecast models.
                     </p>
                 </div>
-                <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-card">
+                <div className="card">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50">
-                            <LineChart className="h-5 w-5 text-brand-600" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-subtle">
+                            <LineChart className="h-5 w-5 text-brand-700" />
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-slate-900">Aggregations</p>
-                            <p className="text-xs text-slate-600">From /telemetry/aggregate</p>
+                            <p className="text-sm font-semibold text-ink-900">Aggregations</p>
+                            <p className="text-xs text-ink-600">From /telemetry/aggregate</p>
                         </div>
                     </div>
-                    <p className="mt-3 text-slate-700">
+                    <p className="mt-3 text-ink-700">
                         Rolling averages, peaks, and stability bands feed into explainable scorecards and sustainability nudges.
                     </p>
                 </div>
-                <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-card">
+                <div className="card">
                     <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50">
-                            <Wand2 className="h-5 w-5 text-brand-600" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-subtle">
+                            <Wand2 className="h-5 w-5 text-brand-700" />
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-slate-900">AI actions</p>
-                            <p className="text-xs text-slate-600">Predictive + sustainable</p>
+                            <p className="text-sm font-semibold text-ink-900">AI actions</p>
+                            <p className="text-xs text-ink-600">Predictive + sustainable</p>
                         </div>
                     </div>
-                    <p className="mt-3 text-slate-700">
+                    <p className="mt-3 text-ink-700">
                         Outcome recommendations include pre-emptive maintenance, load balancing, and low-carbon scheduling
                         suggestions.
                     </p>
                 </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-card">
+            <div className="card">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <h3 className="text-lg font-semibold text-slate-900">Aggregate signals</h3>
-                        <p className="text-sm text-slate-600">Derived directly from /telemetry/aggregate</p>
+                        <h3 className="text-lg font-semibold text-ink-900">Aggregate signals</h3>
+                        <p className="text-sm text-ink-600">Derived directly from /telemetry/aggregate</p>
                     </div>
-                    <div className="text-sm text-slate-600">
+                    <div className="text-sm text-ink-600">
                         {loading ? 'Loading signals...' : `${aggregateMetrics.length} signals loaded`}
                     </div>
                 </div>
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                     {aggregateMetrics.length === 0 ? (
-                        <p className="text-sm text-slate-600">No aggregate metrics available yet.</p>
+                        <p className="text-sm text-ink-600">No aggregate metrics available yet.</p>
                     ) : (
                         aggregateMetrics.map((metric) => (
                             <div
                                 key={metric.label}
-                                className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 shadow-inner"
+                                className="rounded-lg border border-border bg-surface-subtle px-4 py-3"
                             >
-                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">{metric.label}</p>
-                                <p className="text-2xl font-bold text-slate-900">{metric.value}</p>
-                                <p className="text-xs text-slate-600">{metric.context}</p>
+                                <p className="text-xs font-semibold uppercase tracking-wide text-ink-600">{metric.label}</p>
+                                <p className="text-2xl font-bold text-ink-900">{metric.value}</p>
+                                <p className="text-xs text-ink-600">{metric.context}</p>
                             </div>
                         ))
                     )}
                 </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200/70 bg-white p-6 shadow-card">
+            <div className="card">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h3 className="text-lg font-semibold text-slate-900">Telemetry feed</h3>
-                        <p className="text-sm text-slate-600">Latest records feeding the AI layer</p>
+                        <h3 className="text-lg font-semibold text-ink-900">Telemetry feed</h3>
+                        <p className="text-sm text-ink-600">Latest records feeding the AI layer</p>
                     </div>
                     <button
                         onClick={load}
-                        className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-brand-200 hover:text-brand-700"
+                        className="btn btn-secondary"
                     >
                         <Radio className="h-4 w-4" />
                         Refresh feed
@@ -174,7 +173,7 @@ const AIOverview: React.FC = () => {
                 </div>
                 <div className="mt-4 overflow-x-auto">
                     <table className="min-w-full text-left text-sm">
-                        <thead className="text-xs uppercase tracking-wide text-slate-500">
+                        <thead className="text-xs uppercase tracking-wide text-ink-500">
                             <tr>
                                 <th className="py-2 pr-4">Device</th>
                                 <th className="py-2 pr-4">Temperature</th>
@@ -182,20 +181,20 @@ const AIOverview: React.FC = () => {
                                 <th className="py-2 pr-4">Timestamp</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 text-slate-700">
+                        <tbody className="divide-y divide-border text-ink-700">
                             {telemetry.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="py-4 text-slate-600">
+                                    <td colSpan={4} className="py-4 text-ink-600">
                                         Waiting for telemetry...
                                     </td>
                                 </tr>
                             ) : (
                                 telemetry.map((row, idx) => (
                                     <tr key={`${row.device_id}-${idx}`}>
-                                        <td className="py-3 pr-4 font-medium text-slate-900">{row.device_id || 'N/A'}</td>
+                                        <td className="py-3 pr-4 font-medium text-ink-900">{row.device_id || 'N/A'}</td>
                                         <td className="py-3 pr-4">{row.temperature ?? 'N/A'} C</td>
                                         <td className="py-3 pr-4">{row.power_usage ?? 'N/A'} kWh</td>
-                                        <td className="py-3 pr-4 text-xs text-slate-500">
+                                        <td className="py-3 pr-4 text-xs text-ink-500">
                                             {row.timestamp ||
                                                 row.time ||
                                                 new Date().toLocaleString(undefined, {

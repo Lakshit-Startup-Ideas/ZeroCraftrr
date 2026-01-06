@@ -71,11 +71,11 @@ export default function Devices() {
     };
 
     return (
-        <div className="space-y-8">
+        <div className="page">
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">Devices</p>
-                    <h2 className="text-2xl font-semibold text-slate-900">Device registry</h2>
+                    <p className="kicker">Devices</p>
+                    <h2 className="text-2xl font-semibold text-ink-900">Device registry</h2>
                 </div>
                 <div className="relative">
                     <input
@@ -83,22 +83,22 @@ export default function Devices() {
                         placeholder="Search devices..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-64 rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm text-slate-700 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                        className="input input-search w-64"
                     />
-                    <Search className="absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
+                    <Search className="absolute left-3 top-2.5 h-5 w-5 text-ink-400" />
                 </div>
                 <button
-                    className="flex items-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
+                    className="btn btn-primary"
                     onClick={() => setShowModal(true)}
                 >
-                    <Plus className="mr-2 h-5 w-5" />
+                    <Plus className="h-5 w-5" />
                     Add Device
                 </button>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-card">
-                <table className="min-w-full divide-y divide-slate-100">
-                    <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+            <div className="overflow-hidden rounded-lg border border-border bg-surface-raised shadow-card">
+                <table className="min-w-full divide-y divide-border">
+                    <thead className="bg-surface-subtle text-xs uppercase tracking-wide text-ink-500">
                         <tr>
                             <th className="px-6 py-3 text-left font-semibold">Name</th>
                             <th className="px-6 py-3 text-left font-semibold">Device ID</th>
@@ -107,36 +107,32 @@ export default function Devices() {
                             <th className="px-6 py-3 text-right font-semibold">Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 bg-white text-sm text-slate-600">
+                    <tbody className="divide-y divide-border bg-surface-raised text-sm text-ink-600">
                         {loading ? (
                             <tr>
-                                <td colSpan={5} className="px-6 py-4 text-center text-slate-500">
+                                <td colSpan={5} className="px-6 py-4 text-center text-ink-500">
                                     Loading...
                                 </td>
                             </tr>
                         ) : filteredDevices.length === 0 ? (
                             <tr>
-                                <td colSpan={5} className="px-6 py-4 text-center text-slate-500">
+                                <td colSpan={5} className="px-6 py-4 text-center text-ink-500">
                                     No devices found
                                 </td>
                             </tr>
                         ) : (
                             filteredDevices.map((device) => (
                                 <tr key={device.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap font-medium text-slate-900">{device.name}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-slate-500">{device.device_id}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap font-medium text-ink-900">{device.name}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-ink-500">{device.device_id}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span
-                                            className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                                                device.is_active ? 'bg-accent-50 text-accent-700' : 'bg-red-100 text-red-700'
-                                            }`}
-                                        >
+                                        <span className={`badge ${device.is_active ? 'badge-success' : ''}`}>
                                             {device.is_active ? 'Active' : 'Inactive'}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-slate-500">{device.site_id}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-ink-500">{device.site_id}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button className="text-brand-600 hover:text-brand-800">Edit</button>
+                                        <button className="btn btn-ghost">Edit</button>
                                     </td>
                                 </tr>
                             ))
@@ -146,50 +142,50 @@ export default function Devices() {
             </div>
 
             {showModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
-                    <div className="relative w-full max-w-md rounded-2xl border border-slate-200/70 bg-white p-6 shadow-card">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 px-4">
+                    <div className="card relative w-full max-w-md">
                         <button
-                            className="absolute right-4 top-4 text-slate-500 hover:text-slate-700"
+                            className="absolute right-4 top-4 text-ink-500 hover:text-ink-700"
                             onClick={() => setShowModal(false)}
                         >
                             <X className="h-5 w-5" />
                         </button>
-                        <h3 className="mb-4 text-lg font-semibold text-slate-900">Add Device</h3>
+                        <h3 className="mb-4 text-lg font-semibold text-ink-900">Add Device</h3>
                         <form className="space-y-4" onSubmit={createDevice}>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700">Name</label>
+                                <label className="label">Name</label>
                                 <input
                                     type="text"
                                     required
                                     value={newDevice.name}
                                     onChange={(e) => setNewDevice({ ...newDevice, name: e.target.value })}
-                                    className="mt-1 block w-full rounded-md border border-slate-200 p-2 text-sm text-slate-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                                    className="input mt-1"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700">Device ID</label>
+                                <label className="label">Device ID</label>
                                 <input
                                     type="text"
                                     required
                                     value={newDevice.deviceId}
                                     onChange={(e) => setNewDevice({ ...newDevice, deviceId: e.target.value })}
-                                    className="mt-1 block w-full rounded-md border border-slate-200 p-2 text-sm text-slate-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                                    className="input mt-1"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700">Site ID</label>
+                                <label className="label">Site ID</label>
                                 <input
                                     type="number"
                                     required
                                     value={newDevice.siteId}
                                     onChange={(e) => setNewDevice({ ...newDevice, siteId: e.target.value })}
-                                    className="mt-1 block w-full rounded-md border border-slate-200 p-2 text-sm text-slate-900 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                                    className="input mt-1"
                                 />
                             </div>
                             <button
                                 type="submit"
                                 disabled={submitting}
-                                className="flex w-full justify-center rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-60"
+                                className="btn btn-primary w-full disabled:opacity-60"
                             >
                                 {submitting ? 'Saving...' : 'Create Device'}
                             </button>

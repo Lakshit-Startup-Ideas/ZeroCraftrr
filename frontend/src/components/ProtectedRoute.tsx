@@ -8,7 +8,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }
 
     if (initializing) {
         return (
-            <div className="flex h-[60vh] items-center justify-center text-slate-600">
+            <div className="flex h-[60vh] items-center justify-center text-ink-600">
                 Checking your session...
             </div>
         );

@@ -5,9 +5,9 @@ import Footer from '../components/Footer';
 
 const AppLayout: React.FC = () => {
     return (
-        <div className="flex min-h-screen flex-col bg-gradient-to-b from-slate-50 via-white to-slate-50 text-slate-900">
+        <div className="flex min-h-screen flex-col bg-surface text-ink-900">
             <Navbar />
-            <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-12 lg:px-8 lg:py-16">
+            <main className="container w-full flex-1 py-10 lg:py-12">
                 <Outlet />
             </main>
             <Footer />
